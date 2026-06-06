@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pgv-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - BACKEND_URL=http://backend:8000
+    depends_on:
+      - backend
+    restart: always
+
+  backend:
+    # Assuming pgv-backend is in a sibling directory. 
+    # Adjust the 'context' path if it's located elsewhere.
+    build:
+      context: ../pgv-backend
+    container_name: pgv-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+    restart: always
