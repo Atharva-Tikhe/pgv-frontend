@@ -10,6 +10,13 @@
 
     let selectedSample: Sample | null = $state(null);
 
+    onMount(async () => {
+        const resp = await fetch('http://localhost:8000/samples/batch/1')
+        const respJson = await resp.json()
+        data = respJson
+    })
+
+
     const loadSample = function (sample: Sample) {
         selectedSample = sample;
     }
