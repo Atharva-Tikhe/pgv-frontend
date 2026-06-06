@@ -1,11 +1,10 @@
 <script lang="ts">
-    import { onMount, onDestroy } from 'svelte';
+    import { onMount } from 'svelte';
     import { createRoot } from 'react-dom/client';
     import { createElement } from 'react';
-    import {
-        createViewState,
-        JBrowseLinearGenomeView,
-    } from '@jbrowse/react-linear-genome-view';
+
+    // import {createViewState, JBrowseLinearGenomeView} from '@jbrowse/react-linear-genome-view2';
+
     import type { Sample } from '$lib/types/api';
 
     interface Props {
@@ -14,151 +13,182 @@
 
     let { sample }: Props = $props();
 
-    let container: HTMLDivElement;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let root: any;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let viewState: any = $state();
+    let container: HTMLDivElement | null = null;
+    let root: ReturnType<typeof createRoot>;
+    let viewState: any;
 
-    // Static Track IDs
-    const GENCODE_TRACK_ID = 'gencode_v49_annotation';
+    const COVERAGE_TRACK_ID = 'sample_coverage';
+    const LRR_TRACK_ID = 'sample_lrr';
 
-    // JBrowse Configuration
-    const assembly = {
-        name: 'hg38',
-        sequence: {
-            type: 'ReferenceSequenceTrack',
-            trackId: 'hg38-ReferenceSequenceTrack',
-            adapter: {
-                type: 'BgzipFastaAdapter',
-                fastaLocation: { uri: '/data/hg38.fa.gz' },
-                faiLocation: { uri: '/data/hg38.fa.gz.fai' },
-                gziLocation: { uri: '/data/hg38.fa.gz.gzi' },
+    onMount(async () => {
+        const jbrowse = await import ('@jbrowse/react-linear-genome-view2')
+        const createViewState = jbrowse.createViewState;
+        const JBrowseLinearGenomeView = jbrowse.JBrowseLinearGenomeView;
+
+        // import {createViewState, JBrowseLinearGenomeView} from '@jbrowse/react-linear-genome-view2';
+
+        const assembly = {
+            name: "hg38",
+            sequence: {
+                type: "ReferenceSequenceTrack",
+                trackId: "GRCh38-ReferenceSequenceTrack",
+                adapter: {
+                    type: "BgzipFastaAdapter",
+                    uri: "https://jbrowse.org/genomes/GRCh38/fasta/hg38.prefix.fa.gz",
+                },
             },
-        },
-    };
+            refNameAliases: {
+                adapter: {
+                    type: "RefNameAliasAdapter",
+                    uri: "https://jbrowse.org/genomes/GRCh38/hg38_aliases.txt",
+                },
+            },
+            cytobands: {
+                adapter: {
+                    type: "CytobandAdapter",
+                    uri: "https://jbrowse.org/genomes/GRCh38/cytoBand.txt",
+                },
+            },
+        
+        };
 
-    const tracks = [
-        {
+        const refseqTrack = {
+            type: "FeatureTrack",
+            trackId: "ncbi_genes",
+            name: "NCBI RefSeq Genes",
+            assemblyNames: ["hg38"],
+            adapter: {
+                type: "Gff3TabixAdapter",
+                uri: "https://jbrowse.org/genomes/GRCh38/ncbi_refseq/GCA_000001405.15_GRCh38_full_analysis_set.refseq_annotation.sorted.gff.gz",
+            },
+        }
+
+        const panelGenesTrack = {
             type: 'FeatureTrack',
-            trackId: GENCODE_TRACK_ID,
-            name: 'GENCODE v49',
+            trackId: 'panel_genes',
+            name: 'Panel Genes',
             assemblyNames: ['hg38'],
-            category: ['Annotation'],
             adapter: {
-                type: 'Gff3TabixAdapter',
-                gffGzLocation: { uri: '/data/gencode.v49.annotation.sorted.gff3.gz' },
-                index: {
-                    location: { uri: '/data/gencode.v49.annotation.sorted.gff3.gz.tbi' },
+            type: 'BedTabixAdapter',
+            bedGzLocation: {
+                uri: '/data/gene_calls_browser.bed.gz',
+            },
+            index: {
+                location: {
+                uri: '/data/gene_calls_browser.bed.gz.tbi',
                 },
             },
-        },
-    ];
-
-    onMount(() => {
-        viewState = createViewState({
-            assembly,
-            tracks,
-            location: '1:1..100000', // Default location
-            defaultSession: {
-                name: 'Sample Review Session',
-                view: {
-                    id: 'linearGenomeView',
-                    type: 'LinearGenomeView',
-                    tracks: [
-                        {
-                            type: 'FeatureTrack',
-                            configuration: GENCODE_TRACK_ID,
-                            displays: [
-                                {
-                                    type: 'LinearBasicDisplay',
-                                    configuration: `${GENCODE_TRACK_ID}-LinearBasicDisplay`,
-                                },
-                            ],
-                        },
-                    ],
-                },
-            },
-        });
-
-        root = createRoot(container);
-        render();
-    });
-
-    onDestroy(() => {
-        if (root) {
-            root.unmount();
-        }
-    });
-
-    function render() {
-        if (root && viewState) {
-            root.render(createElement(JBrowseLinearGenomeView, { viewState }));
-        }
-    }
-
-    // Effect to handle sample changes
-    $effect(() => {
-        if (viewState && sample) {
-            updateSampleTracks(sample);
-        }
-    });
-
-    function updateSampleTracks(newSample: Sample) {
-        const { session } = viewState;
-        const { view } = session;
-
-        // 1. Identify and remove previous sample-specific tracks
-        // We'll use a naming convention like 'sample_{RegId}_track'
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const tracksToRemove = viewState.jbrowse.tracks.filter((t: any) => 
-            t.trackId.startsWith('sample_')
-        );
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        tracksToRemove.forEach((t: any) => {
-            view.hideTrack(t.trackId);
-            viewState.jbrowse.removeTrackConf(t);
-        });
-
-        // 2. Add new sample tracks
-        const coverageTrackId = `sample_${newSample.RegId}_coverage`;
-        const variantTrackId = `sample_${newSample.RegId}_variants`;
-
-        const coverageTrack = {
-            type: 'QuantitativeTrack',
-            trackId: coverageTrackId,
-            name: `Segments (${newSample.RegId})`,
-            assemblyNames: ['hg38'],
-            category: ['Sample Data'],
-            adapter: {
-                type: 'BigWigAdapter',
-                bigWigLocation: { uri: `/data/${newSample.RegId}_seg.bw` },
             },
         };
 
+    
 
+        // const jbrowse = await import(
+        //     '@jbrowse/react-linear-genome-view2'
+        // );
+
+        // import {createViewState, JBrowseLinearGenomeView} from '@jbrowse/react-linear-genome-view2';
+        // const createViewState = jbrowse.createViewState;
+        // const JBrowseLinearGenomeView = jbrowse.JBrowseLinearGenomeView;
+
+        viewState = createViewState({
+            assembly,
+            tracks: [
+            refseqTrack,
+            panelGenesTrack,
+            ],
+            location: '1:1..1000000',
+            defaultSession: {
+                name: "My session",
+                view: {
+                    id: "linearGenomeView",
+                    type: "LinearGenomeView",
+                    init: {
+                    assembly: "hg38",
+                    loc: "10:29,838,565..29,838,850",
+                    tracks: ["ncbi_genes","panel_genes"],
+                    },
+                },
+            },
+
+        });
+
+        root = createRoot(container);
+
+        root.render(
+            createElement(JBrowseLinearGenomeView, {
+            viewState,
+            }),
+        );
+
+        console.log(viewState.navLocString())
+
+        if (sample) {
+            loadSampleTracks(sample);
+        }
+    });
+
+    function loadSampleTracks(sample: Sample) {
+        const { view } = viewState.session;
+        
+        console.log('loading .. ' + sample.RegId)
+        removeTrack(COVERAGE_TRACK_ID);
+        removeTrack(LRR_TRACK_ID);
+
+        const coverageTrack = {
+            type: 'QuantitativeTrack',
+            trackId: COVERAGE_TRACK_ID,
+            name: `Coverage ${sample.RegId}`,
+            assemblyNames: ['hg38'],
+            adapter: {
+            type: 'BigWigAdapter',
+            bigWigLocation: {
+                uri: `/data/${sample.RegId}_seg.bw`,
+            },
+            },
+        };
+    
+          const lrrTrack = {
+            type: 'QuantitativeTrack',
+            trackId: LRR_TRACK_ID,
+            name: `LRR ${sample.RegId}`,
+            assemblyNames: ['hg38'],
+            adapter: {
+            type: 'BigWigAdapter',
+            bigWigLocation: {
+                uri: `/data/${sample.RegId}_lrr.bw`,
+            },
+            },
+        };
+        
         viewState.jbrowse.addTrackConf(coverageTrack);
+        viewState.jbrowse.addTrackConf(lrrTrack);
 
-        // 3. Show the new tracks
-        view.showTrack(coverageTrackId);
-        view.showTrack(variantTrackId);
-
-        render();
+        view.showTrack(COVERAGE_TRACK_ID);
+        view.showTrack(LRR_TRACK_ID);
     }
+
+    function removeTrack(trackId: string) {
+        const track = viewState?.jbrowse?.tracks?.find(
+            (t: any) => t.trackId === trackId,
+        );
+
+        if (!track) return;
+
+        viewState.session.view.hideTrack(trackId);
+        viewState.jbrowse.removeTrackConf(track);
+    }
+
+    $effect(() => {
+        if (!viewState || !sample) return;
+
+        loadSampleTracks(sample);
+    });
+
 </script>
 
-<div bind:this={container} class="w-full h-full border border-gray-300">
-    {#if !viewState}
-        <div class="flex items-center justify-center h-full">
-            <p class="text-gray-500">Initializing JBrowse...</p>
-        </div>
-    {/if}
-</div>
+<div
+  bind:this={container}
+></div>
 
-<style>
-    /* Ensure the container has a defined height */
-    div {
-        min-height: 600px;
-    }
-</style>
+<!-- <div>placeholder</div> -->

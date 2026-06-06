@@ -1,21 +1,58 @@
 <script lang="ts">
-    import JBrowseViewer from '$lib/components/JBrowseViewer.svelte';
+	import IGV from '$lib/components/IGV.svelte';
+    import Versions from '$lib/components/Versions.svelte';
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    // import JBrowseViewer from '$lib/components/JBrowseViewer.svelte';
     import type { Sample } from '$lib/types/api';
 
     let { data } = $props();
+    let interpretation = $state("");
+    let saved : boolean = $state(false);
 
     let selectedSample: Sample | null = $state(null);
 
     const loadSample = function (sample: Sample) {
         selectedSample = sample;
     }
+
+    const sendInterpretation = async function(selectedSample : Sample | null) {
+        const resp = await fetch('http://localhost:8000/samples/interpretation', {
+            method : 'POST',
+            headers : {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({sample_id: selectedSample?.RegId.toString(), interpretation: interpretation})
+        });
+        const status = await resp.json()
+
+        console.log(status)
+        console.log(resp.status)
+
+        if (resp.status == 200 && status.status == 'ok'){
+            saved = !saved;
+            interpretation = '';
+
+            setTimeout(() => {
+                saved = !saved;
+            }, 1000)
+        }
+    }
 </script>
 
+<nav class="ml-5 flex items-center gap-2">
+    <img src="http://localhost:8000/static/LRCG.jpeg" class="w-20" alt="">
+    <h3 class=" capitalize font-bold font-sans">|</h3>
+    <h3 class=" capitalize font-bold font-sans">Patient Genome Viewer</h3>
+    <div class="text-sm ml-auto mr-5">
+        <Versions />
+    </div>
+    
+</nav>
 
-<div class="grid grid-cols-[0.3fr_1fr] gap-4 m-5 h-[calc(100vh-40px)]">
+<div class="grid grid-cols-[0.3fr_1fr] gap-4 mt-2 mb-5 mx-5 max-h-100">
 
-    <div class="col-start-1 col-span-1 flex flex-col gap-4">
-        <div class="overflow-y-auto border-gray-200 border-2 flex-grow">
+    <div class="col-start-1 col-span-1 flex flex-col gap-4 max-h-1/2">
+        <div class="overflow-y-auto max-h-1/6 border-gray-200 border-2">
             {#each data.samples as sample, idx (idx)}
                 <!-- svelte-ignore a11y_click_events_have_key_events -->
                 <div 
@@ -37,12 +74,15 @@
                 id="interpretation" 
                 placeholder="Write Sample Interpretation {selectedSample ? ': ' + selectedSample.RegId : ''}" 
                 class="w-full border-2 border-gray-200 p-2 min-h-[150px]"
+                bind:value={interpretation}
             ></textarea>
-            <button class="mt-2 bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Save Notes</button>
+            <button onclick={() => sendInterpretation(selectedSample)} class="mt-2 {saved ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'} text-white py-2 rounded ">{saved ? "Saved!" : 'Save Notes'}</button>
         </div>
 
     </div>
-    <div class="col-start-2 border-2 border-gray-200 overflow-hidden">
-        <JBrowseViewer sample={selectedSample} />
+    <div class="col-start-2 border-2 border-gray-200 overflow-hidden max-h-1/2">
+        Selected: {selectedSample?.RegId}
+        <!-- <JBrowseViewer sample={selectedSample} /> -->
+         <IGV sample={selectedSample} />
     </div>
 </div>

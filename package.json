@@ -38,8 +38,7 @@
 		"vite": "^8.0.7"
 	},
 	"dependencies": {
-		"@jbrowse/react-linear-genome-view": "^3.1.0",
-		"react": "^19.2.7",
-		"react-dom": "^19.2.7"
+		"@jbrowse/react-linear-genome-view2": "^4.3.0",
+		"igv": "^3.8.1"
 	}
 }

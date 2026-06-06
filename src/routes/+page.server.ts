@@ -6,7 +6,7 @@ export async function load() {
 
     const json = await readFile("static/samples_b1.json", 'utf-8');
     const samples : Sample[] = JSON.parse(json);
-    console.log(samples); 
+    // console.log(samples); 
     return {
         samples: samples
     }
