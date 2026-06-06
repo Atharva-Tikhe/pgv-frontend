@@ -33,23 +33,23 @@
                     name: 'RefSeq Genes',
                     type: 'annotation',
                     format: 'gff3',
-                    url: 'http://localhost:8000/static/data/GCA_000001405.15_GRCh38_full_analysis_set.refseq_annotation.sorted.gff.gz',
-                    indexURL: 'http://localhost:8000/static/data/GCA_000001405.15_GRCh38_full_analysis_set.refseq_annotation.sorted.gff.gz.tbi'
+                    url: 'http://daedalus.ncl.ac.uk:8000/static/data/GCA_000001405.15_GRCh38_full_analysis_set.refseq_annotation.sorted.gff.gz',
+                    indexURL: 'http://daedalus.ncl.ac.uk:8000/static/data/GCA_000001405.15_GRCh38_full_analysis_set.refseq_annotation.sorted.gff.gz.tbi'
                 },
 
                 {
                     type: "annotation",
                     format: "bed",
                     name: "Panel Genes (UKALL)",
-                    url: "http://localhost:8000/static/data/gene_calls_browser.bed.gz", 
-                    indexURL: "http://localhost:8000/static/data/gene_calls_browser.bed.gz.tbi"
+                    url: "http://daedalus.ncl.ac.uk:8000/static/data/gene_calls_browser.bed.gz", 
+                    indexURL: "http://daedalus.ncl.ac.uk:8000/static/data/gene_calls_browser.bed.gz.tbi"
                 }
 
                 // {
                 //     name: 'Panel Genes',
                 //     type: 'annotation',
                 //     format: 'bed',
-                //     url: 'http://localhost:8000/static/data/panel.bed'
+                //     url: 'http://daedalus.ncl.ac.uk:8000/static/data/panel.bed'
                 // }
             ]
         })
@@ -75,7 +75,7 @@
             name: `Segments ${sample.RegId}`,
             type: 'wig',
             format: 'bigwig',
-            url: `http://localhost:8000/static/data/${sample.RegId}_seg.bw`
+            url: `http://daedalus.ncl.ac.uk:8000/static/data/${sample.RegId}_seg.bw`
         })
 
         currentLRRTrack = await browser.loadTrack({
@@ -84,7 +84,7 @@
             type: 'wig',
             format: 'bigwig',
             graphType: 'points',
-            url: `http://localhost:8000/static/data/${sample.RegId}_lrr.bw`
+            url: `http://daedalus.ncl.ac.uk:8000/static/data/${sample.RegId}_lrr.bw`
         })
 
 
@@ -100,7 +100,7 @@
                     type: 'wig',
                     format: 'bigwig',
                     graphType: 'points',
-                    url: `http://localhost:8000/static/data/${sample.RegId}_lrr.bw`
+                    url: `http://daedalus.ncl.ac.uk:8000/static/data/${sample.RegId}_lrr.bw`
                 },
                 {
                     id: `seg_${sample.RegId}`,
@@ -109,7 +109,7 @@
                     format: 'bigwig',
                     graphType: 'line',
                     color: 'red',
-                    url: `http://localhost:8000/static/data/${sample.RegId}_seg.bw`
+                    url: `http://daedalus.ncl.ac.uk:8000/static/data/${sample.RegId}_seg.bw`
                 }
             ]
         })

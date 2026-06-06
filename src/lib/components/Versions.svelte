@@ -7,7 +7,7 @@
     let backendVer = $state('');
 
     onMount(() => {
-        fetch('http://localhost:8000/version').then((res) => res.json()).then((data) => backendVer = data.version)
+        fetch('http://daedalus.ncl.ac.uk:8000/version').then((res) => res.json()).then((data) => backendVer = data.version)
     })
     
 

@@ -1,11 +1,10 @@
 <script lang="ts">
-	import IGV from '$lib/components/IGV.svelte';
+    import IGV from '$lib/components/IGV.svelte';
     import Versions from '$lib/components/Versions.svelte';
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    // import JBrowseViewer from '$lib/components/JBrowseViewer.svelte';
-    import type { Sample } from '$lib/types/api';
+    import type { Sample, Samples } from '$lib/types/api';
+    import {onMount} from 'svelte';
 
-    let { data } = $props();
+    let data : Samples | undefined = $state();
     let interpretation = $state("");
     let saved : boolean = $state(false);
 
@@ -15,8 +14,15 @@
         selectedSample = sample;
     }
 
+    onMount(async () => {
+      const resp = await fetch('http://daedalus.ncl.ac.uk:8000/samples/batch/1')
+      const respJson = await resp.json()
+      data = respJson
+      console.log(respJson)
+    })
+  
     const sendInterpretation = async function(selectedSample : Sample | null) {
-        const resp = await fetch('http://localhost:8000/samples/interpretation', {
+        const resp = await fetch('http://daedalus.ncl.ac.uk:8000/samples/interpretation', {
             method : 'POST',
             headers : {
                 'Content-Type': 'application/json'
@@ -40,7 +46,7 @@
 </script>
 
 <nav class="ml-5 flex items-center gap-2">
-    <img src="http://localhost:8000/static/LRCG.jpeg" class="w-20" alt="">
+    <img src="http://daedalus.ncl.ac.uk:8000/static/LRCG.jpeg" class="w-20" alt="">
     <h3 class=" capitalize font-bold font-sans">|</h3>
     <h3 class=" capitalize font-bold font-sans">Patient Genome Viewer</h3>
     <div class="text-sm ml-auto mr-5">
@@ -53,7 +59,7 @@
 
     <div class="col-start-1 col-span-1 flex flex-col gap-4 max-h-1/2">
         <div class="overflow-y-auto max-h-1/6 border-gray-200 border-2">
-            {#each data.samples as sample, idx (idx)}
+            {#each data as sample, idx (idx)}
                 <!-- svelte-ignore a11y_click_events_have_key_events -->
                 <div 
                     tabindex="0" 
